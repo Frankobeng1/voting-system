@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f1f5f9; }
+    nav {
+      background: #1e293b;
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    nav h1 { margin: 0; font-size: 20px; }
+    .nav-center {
+      display: flex;
+      gap: 20px;
+    }
+    .nav-center a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .nav-center a.active {
+      border-bottom: 2px solid #0ea5e9;
+    }
+    nav button {
+      background: #ef4444;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    nav button:hover { background: #dc2626; }
+
+    .container { padding: 20px; }
+    h2 { margin-top: 0; color: #0f172a; }
+    .admin-table {
+      width: 100%; border-collapse: collapse; margin-top: 20px;
+      background: white; border-radius: 8px; overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .admin-table th, .admin-table td {
+      padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center;
+    }
+    .admin-table th { background: #0ea5e9; color: white; }
+    .admin-btn {
+      padding: 6px 12px; margin: 2px; border: none;
+      border-radius: 6px; cursor: pointer; font-size: 0.9em;
+    }
+    .delete-btn { background: #ef4444; color: white; }
+    .update-btn { background: #3b82f6; color: white; }
+    .reset-btn { background: #f59e0b; color: white; margin-top: 10px; }
+    #updateForm {
+      display: none; background: white; padding: 15px; border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15); margin-top: 20px;
+    }
+    input {
+      padding: 8px; margin: 6px 0; width: 100%;
+      border: 1px solid #ccc; border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <h1>Admin Panel</h1>
+    <div class="nav-center">
+      <a href="admin.html" class="active">Dashboard</a>
+      <a href="admin_leaderboard.html">Leading Board</a>
+    </div>
+    <button id="signoutBtn">Sign Out</button>
+  </nav>
+
+  <div class="container">
+    <h2>Registered Students</h2>
+    <button class="reset-btn" onclick="resetVotes()">Reset All Votes</button>
+    <div id="resetMsg" style="color:green;font-weight:bold;margin-top:5px;"></div>
+
+    <div id="userTable"></div>
+
+    <!-- Update Form -->
+    <div id="updateForm">
+      <h3>Update Student</h3>
+      <input type="text" id="updateEmail" placeholder="Email">
+      <input type="text" id="updatePassword" placeholder="Password">
+      <input type="text" id="updateDepartment" placeholder="Department">
+      <button onclick="saveUserUpdate()">Save Changes</button>
+      <button onclick="closeUpdateForm()">Cancel</button>
+    </div>
+  </div>
+
+<script>
+  // Protect page
+  if (localStorage.getItem("isAdmin") !== "true") {
+    window.location.href = "admin_login.html";
+  }
+
+  let currentUpdateUser = null;
+
+  // 🔹 Generate 100 demo users if none exist
+  if (!localStorage.getItem("users")) {
+    let users = {};
+    let departments = ["Computer Science", "IT", "Business", "Engineering", "Math", "Physics"];
+    let prefixes = ["UED", "UEB"];
+    let suffixes = ["21", "22", "23", "24"];
+
+    for (let i = 1; i <= 100; i++) {
+      let prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+      let suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+      let username = prefix + String(i).padStart(3, "0") + suffix; // e.g., UED00121
+
+      users[username] = {
+        email: username.toLowerCase() + "@school.edu",
+        password: "pass" + i,
+        department: departments[Math.floor(Math.random() * departments.length)],
+        voted: false
+      };
+    }
+
+    localStorage.setItem("users", JSON.stringify(users));
+  }
+
+  function renderUsers() {
+    let users = JSON.parse(localStorage.getItem("users") || "{}");
+    let html = `<table class="admin-table">
+      <tr><th>Username</th><th>Email</th><th>Password</th><th>Department</th><th>Voted</th><th>Actions</th></tr>`;
+    for (let username in users) {
+      let pwdCell = `<span style="color:#94a3b8;font-style:italic;">Hidden</span>`;
+      html += `<tr>
+        <td>${username}</td>
+        <td>${users[username].email}</td>
+        <td>${pwdCell}</td>
+        <td>${users[username].department}</td>
+        <td>${users[username].voted ? "✅ Yes" : "❌ No"}</td>
+        <td>
+          <button class="admin-btn delete-btn" onclick="deleteUser('${username}')">Delete</button>
+          <button class="admin-btn update-btn" onclick="showUpdateUserForm('${username}')">Update</button>
+        </td>
+      </tr>`;
+    }
+    html += `</table>`;
+    document.getElementById("userTable").innerHTML = html;
+  }
+
+  function deleteUser(username) {
+    if (!confirm("Delete " + username + "?")) return;
+    let users = JSON.parse(localStorage.getItem("users") || "{}");
+    delete users[username];
+    localStorage.setItem("users", JSON.stringify(users));
+    renderUsers();
+  }
+
+  function showUpdateUserForm(username) {
+    let users = JSON.parse(localStorage.getItem("users") || "{}");
+    currentUpdateUser = username;
+    document.getElementById("updateEmail").value = users[username].email;
+    document.getElementById("updatePassword").value = users[username].password;
+    document.getElementById("updateDepartment").value = users[username].department;
+    document.getElementById("updateForm").style.display = "block";
+  }
+
+  function saveUserUpdate() {
+    let users = JSON.parse(localStorage.getItem("users") || "{}");
+    if (currentUpdateUser) {
+      users[currentUpdateUser].email = document.getElementById("updateEmail").value;
+      users[currentUpdateUser].password = document.getElementById("updatePassword").value;
+      users[currentUpdateUser].department = document.getElementById("updateDepartment").value;
+      localStorage.setItem("users", JSON.stringify(users));
+      renderUsers();
+      closeUpdateForm();
+    }
+  }
+
+  function closeUpdateForm() {
+    document.getElementById("updateForm").style.display = "none";
+    currentUpdateUser = null;
+  }
+
+  function resetVotes() {
+    let users = JSON.parse(localStorage.getItem("users") || "{}");
+    for (let u in users) { users[u].voted = false; }
+    localStorage.setItem("users", JSON.stringify(users));
+    localStorage.removeItem("LiveBoard");
+    document.getElementById("resetMsg").textContent = "All votes reset!";
+    setTimeout(() => { document.getElementById("resetMsg").textContent = ""; }, 2000);
+    renderUsers();
+  }
+
+  // Logout
+  document.getElementById("signoutBtn").addEventListener("click", function() {
+    localStorage.removeItem("isAdmin");
+    window.location.href = "admin_login.html";
+  });
+
+  renderUsers();
+</script>
+</body>
+</html>

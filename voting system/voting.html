@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voting Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f8fafc;
+      color: #1e293b;
+    }
+    nav {
+      background: #1e293b;
+      color: #fff;
+      padding: 10px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-left img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #0ea5e9;
+    }
+    nav h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+    .nav-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    nav a {
+      color: #fff;
+      text-decoration: none;
+    }
+    nav a.active {
+      font-weight: bold;
+      border-bottom: 2px solid #0ea5e9;
+    }
+    .container {
+      padding: 20px;
+      max-width: 750px;
+      margin: auto;
+    }
+    .vote-section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    h2 { margin-top: 0; }
+    .candidate {
+      display: flex;
+      align-items: center;
+      margin: 12px 0;
+      padding: 8px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .candidate:hover { background: #f1f5f9; }
+    .candidate img {
+      width: 80px;
+      height: 80px;
+      border-radius: 70%;
+      object-fit: cover;
+      margin-right: 12px;
+      border: 2px solid #e2e8f0;
+    }
+    button {
+      background: #0ea5e9;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+    button:hover { background: #0284c7; }
+    .face-fix { object-position: 50% 20%; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-left">
+      <img src="images/logo.png" alt="Logo">
+      <h1>Voting System</h1>
+    </div>
+    <div class="nav-center">
+      <a href="voting.html" class="active">Voting</a>
+      <a href="LiveBoard.html">Live Board</a>
+      <a href="results.html">Results</a>
+    </div>
+    <button id="signoutBtn">Sign Out</button>
+  </nav>
+
+  <div class="container">
+    <form id="voteForm">
+      <div class="vote-section">
+        <h2>SRC President</h2>
+        <label class="candidate">
+          <input type="radio" name="src" value="John Mensah" required>
+          <img src="images/john_mensah.jpg" alt="John Mensah" class="face-fix"> 
+          John Mensah
+        </label>
+        <label class="candidate">
+          <input type="radio" name="src" value="Ama Serwaa">
+          <img src="images/ama_serwaa.jpg" alt="Ama Serwaa">
+          Ama Serwaa
+        </label>
+      </div>
+
+      <div class="vote-section">
+        <h2>Vice President</h2>
+        <label class="candidate">
+          <input type="radio" name="vp" value="Kwame Boateng" required>
+          <img src="images/kwame_boateng.jpg" alt="Kwame Boateng">
+          Kwame Boateng
+        </label>
+        <label class="candidate">
+          <input type="radio" name="vp" value="Esi Adjei">
+          <img src="images/esi_adjei.jpg" alt="Esi Adjei">
+          Esi Adjei
+        </label>
+      </div>
+
+      <div class="vote-section">
+        <h2>Local NUGS President</h2>
+        <label class="candidate">
+          <input type="radio" name="nugs" value="Kojo Owusu" required>
+          <img src="images/kojo_owusu.jpg" alt="Kojo Owusu">
+          Kojo Owusu
+        </label>
+        <label class="candidate">
+          <input type="radio" name="nugs" value="Akua Asante">
+          <img src="images/akua_asante.jpg" alt="Akua Asante" class="face-fix">
+          Akua Asante
+        </label>
+      </div>
+
+      <button type="submit">Submit Vote</button>
+    </form>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  let currentUser = localStorage.getItem("currentUser");
+  if (!currentUser) {
+    alert("Please log in first!");
+    window.location.href = "login.html";
+    return;
+  }
+
+  let users = JSON.parse(localStorage.getItem("users") || "{}");
+  if (users[currentUser]?.voted) {
+    alert("You have already voted. Redirecting to results.");
+    window.location.href = "results.html";
+    return;
+  }
+
+  document.getElementById("voteForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    let formData = new FormData(e.target);
+    let srcVote = formData.get("src");
+    let vpVote = formData.get("vp");
+    let nugsVote = formData.get("nugs");
+
+    // Save to LiveBoard
+    let LiveBoard = JSON.parse(localStorage.getItem("LiveBoard") || "{}");
+    LiveBoard[currentUser] = {
+      src: { "John Mensah": 0, "Ama Serwaa": 0 },
+      vp: { "Kwame Boateng": 0, "Esi Adjei": 0 },
+      nugs: { "Kojo Owusu": 0, "Akua Asante": 0 }
+    };
+    LiveBoard[currentUser].src[srcVote] = 1;
+    LiveBoard[currentUser].vp[vpVote] = 1;
+    LiveBoard[currentUser].nugs[nugsVote] = 1;
+
+    localStorage.setItem("LiveBoard", JSON.stringify(LiveBoard));
+
+    // Mark user as voted
+    users[currentUser].voted = true;
+    localStorage.setItem("users", JSON.stringify(users));
+
+    alert("✅ Thank you for voting! Redirecting to results...");
+    window.location.href = "results.html";
+  });
+
+  document.getElementById("signoutBtn").addEventListener("click", function() {
+    localStorage.removeItem("currentUser");
+    window.location.href = "login.html";
+  });
+});
+</script>
+</body>
+</html>

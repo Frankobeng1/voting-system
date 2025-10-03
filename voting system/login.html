@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Page</title>
+  <style>
+    body { margin:0; font-family:Arial,sans-serif; display:flex; flex-direction:column; min-height:100vh; background:#f8fafc; }
+    
+    /* Navbar */
+    nav {
+      background:#1e293b;
+      padding:15px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      position:sticky;
+      top:0;
+      z-index:1000;
+    }
+    .nav-links {
+      display:flex;
+      gap:25px;
+    }
+    nav a { color:#f1f5f9; text-decoration:none; font-weight:bold; }
+    nav a:hover { color:#38bdf8; }
+    nav a.active { color:#38bdf8; text-decoration:underline; }
+
+    /* Logo in nav */
+    .nav-logo img {
+      width:50px;
+      height:50px;
+      border-radius:50%;
+      object-fit:cover;
+      box-shadow:0 2px 6px rgba(0,0,0,0.25);
+    }
+
+    h1 { text-align:center; margin-top:30px; font-size:2.2em; font-weight:bold; color:#38bdf8; letter-spacing:2px;
+      text-shadow:2px 2px 0 #1e293b,4px 4px 12px #0ea5e9,0 0 18px #38bdf8; }
+
+    .login-container { width:100%; max-width:340px; margin:30px auto; background:#fff; padding:20px; border-radius:12px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+    .login-container input { width:100%; padding:10px; margin:6px 0; border-radius:6px; border:1px solid #ccc; font-size:14px; }
+    .login-container button { width:100%; padding:10px; background:#38bdf8; border:none; border-radius:6px; color:#fff;
+      font-weight:bold; cursor:pointer; margin-top:8px; font-size:15px; }
+    .login-container button:hover { background:#0ea5e9; }
+
+    .forgot-btn { width:100%; margin-top:10px; padding:10px; background:linear-gradient(90deg,#38bdf8 0%,#0ea5e9 100%);
+      border:none; border-radius:6px; color:#fff; font-weight:bold; cursor:pointer; font-size:14px; }
+    .forgot-btn:hover { background:linear-gradient(90deg,#0ea5e9 0%,#38bdf8 100%); transform:scale(1.05); }
+
+    .show-password { display:flex; align-items:center; font-size:0.85em; color:#1e293b; margin:4px 0 6px 2px; gap:6px; }
+
+    footer { background:#1e293b; color:#f1f5f9; text-align:center; padding:12px; margin-top:auto; }
+    .footer-marquee { display:inline-block; white-space:nowrap; animation:marquee 12s linear infinite; font-size:0.95em; font-weight:500; }
+    @keyframes marquee { 0%{transform:translateX(100%);} 100%{transform:translateX(-100%);} }
+
+    /* Forgot password modal */
+    #forgotModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5);
+      justify-content:center; align-items:center; z-index:2000; }
+    #forgotModal .modal-content { background:#fff; padding:20px; border-radius:12px; width:90%; max-width:320px; box-shadow:0 4px 12px rgba(0,0,0,0.25); }
+    #forgotModal h2 { margin:0 0 15px; color:#1e293b; text-align:center; font-size:1.2rem; }
+    #forgotModal input { width:100%; padding:10px; margin:6px 0; border-radius:6px; border:1px solid #ccc; font-size:14px; }
+    #forgotModal button { width:100%; padding:10px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:14px; margin-top:8px; }
+    #resetBtn { background:#38bdf8; color:#fff; } #resetBtn:hover { background:#0ea5e9; }
+    #closeModal { background:#ef4444; color:#fff; } #closeModal:hover { background:#dc2626; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-links">
+     
+    <div class="nav-logo">
+      <img src="images/logo.png" alt="UENR Logo">
+    </div>
+  </nav>
+
+  <h1>UENR Voting System</h1>
+
+  <div class="login-container">
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Username" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <div class="show-password"><input type="checkbox" id="togglePassword"> Show Password</div>
+      <button type="submit">Login</button>
+      <button id="forgotPasswordBtn" type="button" class="forgot-btn">Forgot Password?</button>
+      <div id="loginMsg" style="color:#ef4444;font-weight:bold;margin-top:8px;"></div>
+    </form>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div id="forgotModal">
+    <div class="modal-content">
+      <h2>🔑 Reset Password</h2>
+      <form id="resetForm">
+        <input type="text" id="resetUsername" placeholder="Enter your username" required>
+        <input type="password" id="newPassword" placeholder="Enter new password" required>
+        <div class="show-password"><input type="checkbox" id="toggleResetPassword"> Show Password</div>
+        <button type="submit" id="resetBtn">Update Password</button>
+        <button type="button" id="closeModal">Cancel</button>
+        <div id="resetMsg" style="margin-top:8px;font-weight:bold;text-align:center;"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Ensure admin & users exist
+      if (!localStorage.getItem("admin_password")) {
+        localStorage.setItem("admin_password", "admin123");
+      }
+      if (!localStorage.getItem("users")) {
+        localStorage.setItem("users", JSON.stringify({}));
+      }
+      let users = JSON.parse(localStorage.getItem("users"));
+      if (!users["admin"]) {
+        users["admin"] = { email:"admin@site.com", password: localStorage.getItem("admin_password"), department:"Admin", voted:false };
+        localStorage.setItem("users", JSON.stringify(users));
+      }
+
+      // Login
+      document.getElementById("loginForm").onsubmit = function(e) {
+        e.preventDefault();
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+        const users = JSON.parse(localStorage.getItem("users") || "{}");
+        const adminPwd = localStorage.getItem("admin_password");
+        const msg = document.getElementById("loginMsg");
+
+        if (username === "admin" && password === adminPwd) {
+          localStorage.setItem("currentUser", "admin");
+          window.location.href = "admin.html";
+          return;
+        }
+        if (users[username] && users[username].password === password) {
+          localStorage.setItem("currentUser", username);
+          window.location.href = "voting.html";
+          return;
+        }
+        msg.textContent = "❌ Invalid username or password!";
+      };
+
+      // Forgot password modal
+      const forgotBtn = document.getElementById("forgotPasswordBtn");
+      const modal = document.getElementById("forgotModal");
+      const closeModal = document.getElementById("closeModal");
+      const resetForm = document.getElementById("resetForm");
+      const resetMsg = document.getElementById("resetMsg");
+
+      forgotBtn.onclick = () => { modal.style.display = "flex"; resetMsg.textContent=""; };
+      closeModal.onclick = () => { modal.style.display = "none"; };
+
+      resetForm.onsubmit = function(e) {
+        e.preventDefault();
+        const username = document.getElementById("resetUsername").value.trim();
+        const newPassword = document.getElementById("newPassword").value;
+        let users = JSON.parse(localStorage.getItem("users") || "{}");
+
+        const passwordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/;
+
+        if (!passwordPattern.test(newPassword)) {
+          resetMsg.style.color="red";
+          resetMsg.textContent="❌ Password must be ≥8 chars, include uppercase, lowercase, and a number!";
+          return;
+        }
+        if (username === "admin") {
+          resetMsg.style.color="red";
+          resetMsg.textContent="❌ Admin password cannot be reset here!";
+          return;
+        }
+        if (users[username]) {
+          users[username].password = newPassword;
+          localStorage.setItem("users", JSON.stringify(users));
+          resetMsg.style.color="green";
+          resetMsg.textContent="✅ Password updated successfully!";
+        } else {
+          resetMsg.style.color="red";
+          resetMsg.textContent="❌ Username not found!";
+        }
+      };
+
+      // Password toggles
+      document.getElementById("togglePassword").onchange = function() {
+        document.getElementById("password").type = this.checked ? "text" : "password";
+      };
+      document.getElementById("toggleResetPassword").onchange = function() {
+        document.getElementById("newPassword").type = this.checked ? "text" : "password";
+      };
+    });
+  </script>
+
+  <footer>
+    <span class="footer-marquee">© 2025 Voting System | All rights reserved</span>
+  </footer>
+</body>
+</html>

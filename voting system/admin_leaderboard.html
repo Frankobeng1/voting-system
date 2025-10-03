@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Leading Board</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f1f5f9; }
+    header {
+      background: #1e293b;
+      color: white;
+      padding: 15px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    header h1 { margin:0; }
+    header nav a {
+      color: #f1f5f9;
+      margin-right: 15px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    header nav a:hover { color: #38bdf8; }
+    header nav a.active {
+      color: #38bdf8;
+      text-decoration: underline;
+    }
+    header button {
+      background:#ef4444;
+      border:none;
+      padding:8px 16px;
+      border-radius:6px;
+      color:#fff;
+      font-weight:bold;
+      cursor:pointer;
+    }
+    header button:hover { background:#dc2626; }
+    .container { padding: 20px; }
+    h2 { margin-top: 30px; color: #0f172a; }
+    .leaderboard {
+      width: 100%; border-collapse: collapse; margin-top: 15px;
+      background: white; border-radius: 8px; overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .leaderboard th, .leaderboard td {
+      padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center;
+    }
+    .leaderboard th { background: #0ea5e9; color: white; }
+    .candidate-img {
+      width: 60px; height: 60px; border-radius: 50%;
+      object-fit: cover; border: 2px solid #e2e8f0;
+    }
+    /* Special face fixes */
+    .john { object-position: center top; }
+    .akua { object-position: center 25%; }
+    .highlight { background: #e0f2fe; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Leading Board</h1>
+    <nav>
+      <a href="admin.html">Dashboard</a>
+      <a href="admin_leaderboard.html" class="active">Leading Board</a>
+    </nav>
+    <button onclick="logout()">Sign Out</button>
+  </header>
+
+  <div class="container">
+    <h2>SRC President</h2>
+    <div id="srcBoard"></div>
+
+    <h2>Vice President</h2>
+    <div id="vpBoard"></div>
+
+    <h2>Local NUGS President</h2>
+    <div id="nugsBoard"></div>
+  </div>
+
+<script>
+  // Protect page
+  if (localStorage.getItem("isAdmin") !== "true") {
+    window.location.href = "admin_login.html";
+  }
+
+  function renderBoard() {
+    let liveBoard = JSON.parse(localStorage.getItem("LiveBoard") || "{}");
+
+    // Candidates grouped by category
+    const candidates = {
+      src: {
+        "John Mensah": "images/john_mensah.jpg",
+        "Ama Serwaa": "images/ama_serwaa.jpg"
+      },
+      vp: {
+        "Kwame Boateng": "images/kwame_boateng.jpg",
+        "Esi Adjei": "images/esi_adjei.jpg"
+      },
+      nugs: {
+        "Kojo Owusu": "images/kojo_owusu.jpg",
+        "Akua Asante": "images/akua_asante.jpg"
+      }
+    };
+
+    // Initialize results
+    let results = { src:{}, vp:{}, nugs:{} };
+    for (let pos in candidates) {
+      for (let name in candidates[pos]) {
+        results[pos][name] = 0;
+      }
+    }
+
+    // Aggregate votes
+    for (let voter in liveBoard) {
+      let votes = liveBoard[voter];
+      if (votes.src) {
+        for (let c in votes.src) results.src[c] += votes.src[c];
+      }
+      if (votes.vp) {
+        for (let c in votes.vp) results.vp[c] += votes.vp[c];
+      }
+      if (votes.nugs) {
+        for (let c in votes.nugs) results.nugs[c] += votes.nugs[c];
+      }
+    }
+
+    // Render each category
+    function renderCategory(position, divId) {
+      let sorted = Object.entries(results[position]).sort((a,b)=>b[1]-a[1]);
+      let html = `<table class="leaderboard">
+        <tr><th>Rank</th><th>Photo</th><th>Candidate</th><th>Votes</th></tr>`;
+      sorted.forEach(([name, votes], i) => {
+        // Add special face-fix classes
+        let extraClass = "";
+        if (name === "John Mensah") extraClass = "john";
+        if (name === "Akua Asante") extraClass = "akua";
+        html += `<tr class="${i === 0 ? 'highlight' : ''}">
+          <td>#${i+1}</td>
+          <td><img src="${candidates[position][name]}" class="candidate-img ${extraClass}" alt="${name}"></td>
+          <td>${name}</td>
+          <td>${votes}</td>
+        </tr>`;
+      });
+      html += `</table>`;
+      document.getElementById(divId).innerHTML = html;
+    }
+
+    renderCategory("src","srcBoard");
+    renderCategory("vp","vpBoard");
+    renderCategory("nugs","nugsBoard");
+  }
+
+  function logout() {
+    localStorage.removeItem("isAdmin");
+    window.location.href = "admin_login.html";
+  }
+
+  renderBoard();
+</script>
+</body>
+</html>

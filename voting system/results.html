@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Voting Results</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      transition: background 0.3s, color 0.3s;
+    }
+    nav {
+      background: #1e293b;
+      color: #fff;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    nav h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+    .nav-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      margin: 0 10px;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    nav a.active {
+      font-weight: bold;
+      border-bottom: 2px solid #0ea5e9;
+    }
+    nav .nav-right button {
+      background: #ef4444;
+      border: none;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    .container {
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    .result-section {
+      background: #fff;
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .result-section h2 {
+      margin-top: 0;
+    }
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .results-table th, .results-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    .winner-row {
+      background: #bbf7d0;
+      font-weight: bold;
+    }
+    /* Share popup */
+    #share-btn {
+      background: #0ea5e9;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #share-popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+    #share-popup-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    #share-popup-content button {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      width: 80%;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #share-close {
+      background: #ef4444;
+      color: #fff;
+    }
+    #share-copy {
+      background: #10b981;
+      color: #fff;
+    }
+    #share-whatsapp { background: #25d366; color: #fff; }
+    #share-telegram { background: #0088cc; color: #fff; }
+    #share-instagram { background: #d946ef; color: #fff; }
+    #share-email { background: #0ea5e9; color: #fff; }
+    #share-confirm {
+      display: none;
+      color: #10b981;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <h1>Live Voting Results</h1>
+    <div class="nav-center">
+      <a href="voting.html">Voting</a>
+      <a href="LiveBoard.html">Live Board</a>
+      <a href="results.html" class="active">Results</a>
+    </div>
+    <div class="nav-right">
+      <button id="share-btn">📤 Share</button>
+      <button id="signoutBtn">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="container" id="results-container"></div>
+
+  <!-- Share popup -->
+  <div id="share-popup">
+    <div id="share-popup-content">
+      <h3>Share Results</h3>
+      <button id="share-whatsapp">📱 Share via WhatsApp</button>
+      <button id="share-telegram">✈️ Share via Telegram</button>
+      <button id="share-instagram">📸 Share via Instagram</button>
+      <button id="share-email">📧 Share via Email</button>
+      <button id="share-copy">📋 Copy to Clipboard</button>
+      <button id="share-close">Close</button>
+      <div id="share-confirm">✅ Copied!</div>
+    </div>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  function aggregateVotes(LiveBoard) {
+    const positions = {
+      src: { "John Mensah": 0, "Ama Serwaa": 0 },
+      vp: { "Kwame Boateng": 0, "Esi Adjei": 0 },
+      nugs: { "Kojo Owusu": 0, "Akua Asante": 0 }
+    };
+    for (let user in LiveBoard) {
+      let votes = LiveBoard[user];
+      for (let pos in votes) {
+        for (let cand in votes[pos]) {
+          positions[pos][cand] += votes[pos][cand];
+        }
+      }
+    }
+    return positions;
+  }
+
+  function renderResults(results) {
+    const container = document.getElementById('results-container');
+    container.innerHTML = '';
+    for (let pos in results) {
+      let section = document.createElement('div');
+      section.className = 'result-section';
+      section.innerHTML = `<h2>${pos === 'src' ? 'SRC President' : pos === 'vp' ? 'Vice President' : 'Local NUGS President'}</h2>`;
+      let table = document.createElement('table');
+      table.className = 'results-table';
+      table.innerHTML = `
+        <thead>
+          <tr><th>Candidate</th><th>Votes</th></tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      let tbody = table.querySelector("tbody");
+      let maxVotes = Math.max(...Object.values(results[pos]));
+      for (let cand in results[pos]) {
+        let isWinner = results[pos][cand] === maxVotes && maxVotes > 0;
+        tbody.innerHTML += `<tr${isWinner ? ' class="winner-row"' : ''}><td>${cand}</td><td>${results[pos][cand]}</td></tr>`;
+      }
+      section.appendChild(table);
+      container.appendChild(section);
+    }
+  }
+
+  // Initial render
+  let LiveBoard = JSON.parse(localStorage.getItem('LiveBoard') || '{}');
+  let results = aggregateVotes(LiveBoard);
+  renderResults(results);
+
+  // Live updates every 2s
+  setInterval(() => {
+    let LiveBoard = JSON.parse(localStorage.getItem('LiveBoard') || '{}');
+    let results = aggregateVotes(LiveBoard);
+    renderResults(results);
+  }, 2000);
+
+  // Update instantly if localStorage changes (works in multiple tabs)
+  window.addEventListener("storage", function(e) {
+    if (e.key === "LiveBoard") {
+      let LiveBoard = JSON.parse(localStorage.getItem('LiveBoard') || '{}');
+      let results = aggregateVotes(LiveBoard);
+      renderResults(results);
+    }
+  });
+
+  // Sign out
+  document.getElementById('signoutBtn')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    localStorage.removeItem('currentUser');
+    window.location.href = 'login.html';
+  });
+
+  // --- SHARE BUTTONS ---
+  function getResultsText(results) {
+    let text = 'Voting Results:\n\n';
+    for (let pos in results) {
+      text += (pos === 'src' ? 'SRC President' : pos === 'vp' ? 'Vice President' : 'Local NUGS President') + ':\n';
+      for (let cand in results[pos]) {
+        text += `  ${cand}: ${results[pos][cand]} votes\n`;
+      }
+      text += '\n';
+    }
+    return text;
+  }
+
+  const shareBtn = document.getElementById('share-btn');
+  const sharePopup = document.getElementById('share-popup');
+  const shareClose = document.getElementById('share-close');
+  const shareWhatsapp = document.getElementById('share-whatsapp');
+  const shareTelegram = document.getElementById('share-telegram');
+  const shareInstagram = document.getElementById('share-instagram');
+  const shareEmail = document.getElementById('share-email');
+  const shareCopy = document.getElementById('share-copy');
+  const shareConfirm = document.getElementById('share-confirm');
+
+  shareBtn?.addEventListener('click', function() {
+    sharePopup.style.display = 'flex';
+  });
+
+  shareClose?.addEventListener('click', function() {
+    sharePopup.style.display = 'none';
+  });
+
+  function copyResultsToClipboard() {
+    const text = getResultsText(results);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        shareConfirm.style.display = 'inline';
+        setTimeout(() => { shareConfirm.style.display = 'none'; }, 1200);
+      });
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      shareConfirm.style.display = 'inline';
+      setTimeout(() => { shareConfirm.style.display = 'none'; }, 1200);
+    }
+  }
+
+  shareCopy?.addEventListener('click', copyResultsToClipboard);
+
+  shareWhatsapp?.addEventListener('click', function() {
+    const text = encodeURIComponent(getResultsText(results));
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  });
+
+  shareTelegram?.addEventListener('click', function() {
+    const text = encodeURIComponent(getResultsText(results));
+    window.open(`https://t.me/share/url?url=&text=${text}`, '_blank');
+  });
+
+  shareInstagram?.addEventListener('click', function() {
+    copyResultsToClipboard();
+    alert('Instagram does not support direct text sharing. The results have been copied — paste them into Instagram DM or story.');
+  });
+
+  shareEmail?.addEventListener('click', function() {
+    const subject = encodeURIComponent('Voting Results');
+    const body = encodeURIComponent(getResultsText(results));
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+  });
+
+  window.addEventListener('click', function(e) {
+    if (e.target === sharePopup) {
+      sharePopup.style.display = 'none';
+    }
+  });
+});
+</script>
+</body>
+</html>
